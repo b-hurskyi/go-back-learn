@@ -63,3 +63,32 @@ func GetAllEvents() ([]Event, error) {
 
 	return events, nil
 }
+
+func (event Event) Update() error {
+	query :=
+		`
+		UPDATE events
+		SET name = $2, description = $3, location = $4, date_time = $5
+		WHERE id = $1
+	`
+
+	stmt, err := db.DB.Prepare(query)
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+	_, err = stmt.Exec(event.ID, event.Name, event.Description, event.Location, event.DateTime)
+	return err
+}
+
+func (event Event) Delete() error {
+	query := "DELETE FROM events WHERE id = $1"
+	stmt, err := db.DB.Prepare(query)
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+
+	_, err = stmt.Exec(event.ID)
+	return err
+}
