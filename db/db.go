@@ -60,7 +60,7 @@ func createTables() {
 			id SERIAL PRIMARY KEY,
 			event_id INT NOT NULL,
 			user_id INT NOT NULL,
-			FOREIGN KEY(event_id) REFERENCES events(id)
+			FOREIGN KEY(event_id) REFERENCES events(id),
 			FOREIGN KEY(user_id) REFERENCES users(id)
 		);
 	`
