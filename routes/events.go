@@ -5,6 +5,7 @@ import (
 	"strconv"
 
 	"github.com/b-hurskyi/go-back-learn/models"
+	"github.com/b-hurskyi/go-back-learn/utils"
 	"github.com/gin-gonic/gin"
 )
 
@@ -92,14 +93,29 @@ func getEvents(ctx *gin.Context) {
 }
 
 func createEvent(ctx *gin.Context) {
+	token := ctx.Request.Header.Get("Authorization")
+
+	if token == "" {
+		ctx.JSON(http.StatusUnauthorized, gin.H{"message": "Unauthorized"})
+		return
+	}
+
+	userId, err := utils.VerifyToken(token)
+
+	if err != nil {
+		ctx.JSON(http.StatusUnauthorized, gin.H{"message": "Unauthorized"})
+		return
+	}
+
 	var event models.Event
-	err := ctx.ShouldBindJSON(&event)
+	err = ctx.ShouldBindJSON(&event)
 
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"message": "Could not parse request data."})
 		return
 	}
 
+	event.UserID = userId
 	err = event.Save(ctx.Request.Context())
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"message": "Could not create event. Try again later."})

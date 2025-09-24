@@ -1,6 +1,8 @@
 package models
 
 import (
+	"errors"
+
 	"github.com/b-hurskyi/go-back-learn/db"
 	"github.com/b-hurskyi/go-back-learn/utils"
 )
@@ -27,4 +29,23 @@ func (u *User) Save() error {
 
 	err = stmt.QueryRow(u.Email, hashedPassword).Scan(&u.ID)
 	return err
+}
+
+func (u *User) ValidateCredentials() error {
+	query := "SELECT id, password FROM users WHERE email = $1"
+	row := db.DB.QueryRow(query, u.Email)
+
+	var retrievedPassword string
+	err := row.Scan(&u.ID, &retrievedPassword)
+	if err != nil {
+		return err
+	}
+
+	passwordIsValid := utils.CheckPasswordHash(u.Password, retrievedPassword)
+
+	if !passwordIsValid {
+		return errors.New("credentials invalid")
+	}
+
+	return nil
 }
