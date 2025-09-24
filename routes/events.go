@@ -5,7 +5,6 @@ import (
 	"strconv"
 
 	"github.com/b-hurskyi/go-back-learn/models"
-	"github.com/b-hurskyi/go-back-learn/utils"
 	"github.com/gin-gonic/gin"
 )
 
@@ -17,9 +16,15 @@ func deleteEventById(ctx *gin.Context) {
 		return
 	}
 
+	userId := ctx.GetInt64("userId")
 	event, err := models.GetEventById(ctx.Request.Context(), eventId)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"message": "Could not fetch the event."})
+		return
+	}
+
+	if event.UserID != userId {
+		ctx.JSON(http.StatusUnauthorized, gin.H{"message": "Access denied."})
 		return
 	}
 
@@ -40,9 +45,16 @@ func updateEventById(ctx *gin.Context) {
 		return
 	}
 
-	_, err = models.GetEventById(ctx.Request.Context(), eventId)
+	userId := ctx.GetInt64("userId")
+	event, err := models.GetEventById(ctx.Request.Context(), eventId)
+
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"message": "Could not fetch the event."})
+		return
+	}
+
+	if event.UserID != userId {
+		ctx.JSON(http.StatusUnauthorized, gin.H{"message": "Access denied."})
 		return
 	}
 
@@ -93,22 +105,10 @@ func getEvents(ctx *gin.Context) {
 }
 
 func createEvent(ctx *gin.Context) {
-	token := ctx.Request.Header.Get("Authorization")
-
-	if token == "" {
-		ctx.JSON(http.StatusUnauthorized, gin.H{"message": "Unauthorized"})
-		return
-	}
-
-	userId, err := utils.VerifyToken(token)
-
-	if err != nil {
-		ctx.JSON(http.StatusUnauthorized, gin.H{"message": "Unauthorized"})
-		return
-	}
+	userId := ctx.GetInt64("userId")
 
 	var event models.Event
-	err = ctx.ShouldBindJSON(&event)
+	err := ctx.ShouldBindJSON(&event)
 
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"message": "Could not parse request data."})
